@@ -1,5 +1,5 @@
 {
-  "name": "ThreeCSG",
+  "name": "@alancnet/three-csg",
   "version": "0.0.1",
   "description": "",
   "main": "index.js",

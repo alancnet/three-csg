@@ -165,6 +165,8 @@ export default (function () {
 
      for (let i = 2; i < vertices.length; i++) {
        face = new THREE.Face3(vertices[0], vertices[i - 1], vertices[i], new THREE.Vector3().copy(polygon.plane.normal))
+       face._csgColor = polygon.shared.color
+       face._csgTag = polygon.shared.tag
        three_geometry.faces.push(face)
      }
    }, this)
@@ -173,8 +175,30 @@ export default (function () {
  }
 
  // convert CSG object to three.js mesh.
- THREE.CSG.toMesh = function (csg, material) {
+ THREE.CSG.toMesh = function (csg, material, materialOptions) {
+   if (!material) material = THREE.MeshLambertMaterial
+   let assignMaterials = typeof material === 'function'
+   const Material = assignMaterials && material
+   const indices = {}
+   const key = color => color ? color.join(',') : 'none'
+   if (assignMaterials) {
+     material = []
+     csg.polygons.forEach(p => {
+       const k = key(p.shared.color)
+       if (!(k in indices)) {
+         indices[k] = material.length
+         material.push(new Material(Object.assign({
+           color: (p.shared.color[0] << 16) + (p.shared.color[1] << 8)  + p.shared.color[2]
+         }, materialOptions)))
+       }
+     })
+   }
    var three_geometry = THREE.CSG.toGeometry(csg)
+   if (assignMaterials) {
+     three_geometry.faces.forEach(face => {
+       face.materialIndex = indices[key(face._csgColor)]
+     })
+   }
    var three_mesh = new THREE.Mesh(three_geometry, material)
    return three_mesh
  }
